@@ -13,33 +13,36 @@ import (
 )
 
 var (
-	authUserID uint
-	ctx        context.Context
-	pgxPool    *pgxpool.Pool
-	postID     uint
+	ctx     context.Context
+	pgxPool *pgxpool.Pool
 )
 
 // authMiddleware is a dummy authentication middleware that extracts the user ID from the "Auth-User-ID" header.
 var authMiddleware = func(c fiber.Ctx) error {
-	authUserID = fiber.GetReqHeader[uint](c, "Auth-User-ID")
+	authUserID := fiber.GetReqHeader[uint](c, "Auth-User-ID")
 	if authUserID == 0 || authUserID > 100_000 { // We allow only user IDs from 1 to 100,000 for testing purposes
 		return c.SendStatus(http.StatusForbidden)
 	}
 
 	// Insert user if not exists (for testing purposes)
-	_, err := pgxPool.Exec(ctx, "INSERT INTO users (id) VALUES ($1) ON CONFLICT DO NOTHING", authUserID)
+	_, err := pgxPool.Exec(c.Context(), "INSERT INTO users (id) VALUES ($1) ON CONFLICT DO NOTHING", authUserID)
 	if err != nil {
 		log.Printf("database error: %v", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
+	// Store in request-local context
+	c.Locals("authUserID", authUserID)
 	return c.Next()
 }
 
 var postLikeHandler = func(c fiber.Ctx) error {
+	authUserID := c.Locals("authUserID").(uint)
+	postID := c.Locals("postID").(uint)
+
 	// Insert the like record
 	sql := "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING"
-	_, err := pgxPool.Exec(ctx, sql, postID, authUserID)
+	_, err := pgxPool.Exec(c.Context(), sql, postID, authUserID)
 	if err != nil {
 		log.Printf("database error: %v", err)
 		return c.SendStatus(http.StatusInternalServerError)
@@ -51,14 +54,14 @@ var postLikeHandler = func(c fiber.Ctx) error {
 
 var postLikeValidator = func(c fiber.Ctx) error {
 	// Validate post ID format
-	postID = fiber.Params[uint](c, "id")
+	postID := fiber.Params[uint](c, "id")
 	if postID == 0 {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
 	// Validate post existence
 	var exists bool
-	err := pgxPool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)", postID).Scan(&exists)
+	err := pgxPool.QueryRow(c.Context(), "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)", postID).Scan(&exists)
 	if err != nil {
 		log.Printf("database error: %v", err)
 		return c.SendStatus(http.StatusInternalServerError)
@@ -67,9 +70,11 @@ var postLikeValidator = func(c fiber.Ctx) error {
 		return c.SendStatus(http.StatusNotFound)
 	}
 
+	authUserID := c.Locals("authUserID").(uint)
+
 	// Cannot like own post
 	var postOwnerID uint
-	err = pgxPool.QueryRow(ctx, "SELECT user_id FROM posts WHERE id = $1", postID).Scan(&postOwnerID)
+	err = pgxPool.QueryRow(c.Context(), "SELECT user_id FROM posts WHERE id = $1", postID).Scan(&postOwnerID)
 	if err != nil {
 		log.Printf("database error: %v", err)
 		return c.SendStatus(http.StatusInternalServerError)
@@ -81,7 +86,7 @@ var postLikeValidator = func(c fiber.Ctx) error {
 	// Check if user already liked the post
 	var alreadyLiked bool
 	sql := "SELECT EXISTS(SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2)"
-	err = pgxPool.QueryRow(ctx, sql, postID, authUserID).Scan(&alreadyLiked)
+	err = pgxPool.QueryRow(c.Context(), sql, postID, authUserID).Scan(&alreadyLiked)
 	if err != nil {
 		log.Printf("database error: %v", err)
 		return c.SendStatus(http.StatusInternalServerError)
@@ -90,6 +95,8 @@ var postLikeValidator = func(c fiber.Ctx) error {
 		return c.SendStatus(http.StatusConflict)
 	}
 
+	// Store in request-local context
+	c.Locals("postID", postID)
 	return c.Next()
 }
 
