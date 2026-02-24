@@ -51,7 +51,7 @@ var postLikeHandler = func(c fiber.Ctx) error {
 
 	// Successful
 	log.Printf("user %d liked post %d", authUserID, postID)
-	return nil
+	return c.SendStatus(http.StatusOK)
 }
 
 var postLikeValidator = func(c fiber.Ctx) error {
