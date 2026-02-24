@@ -40,16 +40,26 @@ var authMiddleware = func(c fiber.Ctx) error {
 var postLikeHandler = func(c fiber.Ctx) error {
 	authUserID := c.Locals("authUserID").(uint)
 	postID := c.Locals("postID").(uint)
-
-	// Insert the like record
 	sql := "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING"
+	if os.Getenv("ASYNC_POST_LIKE") == "true" {
+		go func() {
+			_, err := pgxPool.Exec(context.Background(), sql, postID, authUserID)
+			if err != nil {
+				log.Printf("async database error: %v", err)
+				return
+			}
+			log.Printf("user %d liked post %d (async)", authUserID, postID)
+		}()
+		return c.SendStatus(http.StatusAccepted)
+	}
+
+	// Synchronous insert
 	_, err := pgxPool.Exec(c.Context(), sql, postID, authUserID)
 	if err != nil {
 		log.Printf("database error: %v", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	// Successful
 	log.Printf("user %d liked post %d", authUserID, postID)
 	return c.SendStatus(http.StatusOK)
 }
