@@ -21,7 +21,7 @@ var (
 
 var postLikeHandler = func(c fiber.Ctx) error {
 	authUserID := c.Locals("auth_user_id").(uint)
-	postID := c.Locals("postID").(uint)
+	postID := c.Locals("post_id").(uint)
 	sql := "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING"
 	if os.Getenv("ASYNC_POST_LIKE") == "true" {
 		go func() {
@@ -85,7 +85,7 @@ var postLikeValidator = func(c fiber.Ctx) error {
 	}
 
 	// Store in request-local context
-	c.Locals("postID", postID)
+	c.Locals("post_id", postID)
 	return c.Next()
 }
 
