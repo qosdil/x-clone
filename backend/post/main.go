@@ -48,14 +48,15 @@ var postLikeHandler = func(c fiber.Ctx) error {
 
 var postLikeValidator = func(c fiber.Ctx) error {
 	// Validate post ID format
-	postID := fiber.Params[uint](c, "id")
-	if postID == 0 {
+	publicPostID := c.Params("public_id", "")
+	if publicPostID == "" {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
 	// Validate post existence
-	var postOwnerID uint
-	err := pgxPool.QueryRow(c.Context(), "SELECT user_id FROM posts WHERE id = $1", postID).Scan(&postOwnerID)
+	var postID, postOwnerID uint
+	sql := "SELECT id, user_id FROM posts WHERE posts.public_id = $1"
+	err := pgxPool.QueryRow(c.Context(), sql, publicPostID).Scan(&postID, &postOwnerID)
 	if err == pgx.ErrNoRows {
 		return c.SendStatus(http.StatusNotFound)
 	}
@@ -73,7 +74,7 @@ var postLikeValidator = func(c fiber.Ctx) error {
 
 	// Check if user already liked the post
 	var alreadyLiked bool
-	sql := "SELECT EXISTS(SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2)"
+	sql = "SELECT EXISTS(SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2)"
 	err = pgxPool.QueryRow(c.Context(), sql, postID, authUserID).Scan(&alreadyLiked)
 	if err != nil {
 		log.Printf("database error: %v", err)
@@ -116,7 +117,7 @@ func main() {
 		app.Use(pprof.New())
 	}
 	v1 := app.Group("/v1")
-	v1.Post("/posts/:id/like", auth.AuthMiddleware, postLikeValidator, postLikeHandler)
+	v1.Post("/posts/:public_id/like", auth.AuthMiddleware, postLikeValidator, postLikeHandler)
 
 	log.Fatal(app.Listen(":" + os.Getenv("X_CLONE_HTTP_SERVER_PORT")))
 }

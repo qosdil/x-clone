@@ -8,6 +8,7 @@ ALTER TABLE public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 CREATE TABLE public.posts (
     id serial NOT NULL,
+    public_id text unique NOT NULL,
     user_id integer NOT NULL,
     post character varying(255) NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
