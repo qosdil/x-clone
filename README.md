@@ -1,8 +1,8 @@
 # x-clone
 
-A conceptual clone of X.com, but limited to text-based tweeting. Implements the microservices architecture on the backend.
+A conceptual clone of X.com, but limited to text-based tweeting. Implements the microservices architecture on the backend in a monorepo codebase.
 
-This monorepo consists of a Go‑based backend and a frontend. The repository is split into `backend`, `frontend` and `infra` folders with minimal scaffolding for development.
+This parent monorepo consists of a Go‑based backend and a frontend. The repository is split into `backend`, `frontend` and `infra` folders with minimal scaffolding for development.
 
 ## Repository layout
 
