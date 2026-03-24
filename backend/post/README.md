@@ -109,53 +109,6 @@ Create a `.env` file based on `.env.example`:
    ./tmp/bin/post
    ```
 
-### Docker
-
-Build and run using Docker:
-
-```sh
-docker build -t x-clone-post .
-docker run --env-file .env x-clone-post
-```
-
-## API Endpoints
-
-### `POST /v1/posts/:id/like`
-
-Like a post.
-
-**Headers:**
-- `Auth-User-ID: <uint>` – User ID performing the action (required; must be between 1-100,000)
-
-**Response:**
-- `200 OK` – Like recorded successfully
-- `400 Bad Request` – Invalid post ID
-- `403 Forbidden` – Invalid user ID or attempting to like own post
-- `404 Not Found` – Post does not exist
-- `409 Conflict` – User already liked the post
-- `500 Internal Server Error` – Database error
-
-## Environment Variables
-
-| Variable | Description | Example |
-|---|---|---|
-| `X_CLONE_POSTGRES_USER` | PostgreSQL user | postgres |
-| `X_CLONE_POSTGRES_PASSWORD` | PostgreSQL password | password |
-| `X_CLONE_POSTGRES_HOST` | PostgreSQL host | localhost |
-| `X_CLONE_POSTGRES_PORT` | PostgreSQL port | 5432 |
-| `X_CLONE_POSTGRES_DB_NAME` | PostgreSQL database name | x_clone |
-| `X_CLONE_POSTGRES_SSLMODE` | SSL mode | disable |
-| `X_CLONE_HTTP_SERVER_PORT` | HTTP server port | 8080 |
-
-## Project Structure
-
-```
-post/
-├── main.go          # application entry point
-├── go.mod           # Go modules definition
-├── schema.sql       # database schema
-```
-
 ## Docker
 
 A multi-stage `Dockerfile` is provided for building and running the service in a container.
