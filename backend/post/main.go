@@ -99,7 +99,7 @@ func init() {
 		os.Getenv("X_CLONE_POSTGRES_HOST"),
 		os.Getenv("X_CLONE_POSTGRES_PORT"),
 		os.Getenv("X_CLONE_POSTGRES_DB_NAME"),
-		os.Getenv("X_CLONE_POSTGRES_SSLMODE"),
+		os.Getenv("X_CLONE_POSTGRES_SSL_MODE"),
 	)
 	var err error
 	pgxPool, err = pgxpool.New(context.Background(), dbURL)

@@ -4,7 +4,7 @@ This directory contains the backend service for the `post` component of the x-cl
 
 ## Overview
 
-- **Language:** Go
+- **Language:** Go 1.26
 - **Framework:** Fiber v3
 - **Entry point:** `main.go`
 - **Database:** PostgreSQL (via pgx connection pool)
@@ -14,10 +14,54 @@ This directory contains the backend service for the `post` component of the x-cl
 
 ### Features
 
-- User authentication middleware
 - Post like endpoint with validation
 - Database connection pooling
 - Environment-based configuration
+- Asynchronous post liking (optional)
+
+## Database Schema
+
+The service uses two main tables:
+
+### posts
+- `id` (serial, primary key)
+- `public_id` (text, unique)
+- `user_id` (integer)
+- `post` (varchar(255))
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### post_likes
+- `id` (serial, primary key)
+- `post_id` (integer, foreign key to posts.id)
+- `user_id` (integer)
+- `created_at` (timestamp)
+- Unique constraint on (post_id, user_id) to prevent duplicate likes
+
+## API Endpoints
+
+### POST /v1/posts/:public_id/like
+
+Likes a post identified by its public ID.
+
+**Authentication:** Required (via `Auth-User-ID` header)
+
+**Parameters:**
+- `public_id` (path): The public ID of the post to like
+
+**Response Codes:**
+- `200 OK`: Post liked successfully (synchronous)
+- `202 Accepted`: Post like queued for processing (asynchronous)
+- `400 Bad Request`: Invalid post ID
+- `403 Forbidden`: Cannot like own post
+- `404 Not Found`: Post not found
+- `409 Conflict`: Post already liked by user
+- `500 Internal Server Error`: Database error
+
+**Notes:**
+- Users cannot like their own posts
+- Duplicate likes are prevented
+- Asynchronous mode can be enabled via `ASYNC_POST_LIKE=true` environment variable
 
 ## Getting Started
 
@@ -27,6 +71,20 @@ This directory contains the backend service for the `post` component of the x-cl
 - PostgreSQL
 - Environment variables configured (see below)
 
+### Environment Variables
+
+Create a `.env` file based on `.env.example`:
+
+- `ASYNC_POST_LIKE`: Enable asynchronous post liking (default: false)
+- `DEBUG`: Enable debug mode with pprof middleware (default: false)
+- `X_CLONE_HTTP_SERVER_PORT`: HTTP server port (default: 3000)
+- `X_CLONE_POSTGRES_HOST`: PostgreSQL host
+- `X_CLONE_POSTGRES_PORT`: PostgreSQL port
+- `X_CLONE_POSTGRES_SSL_MODE`: SSL mode for PostgreSQL connection
+- `X_CLONE_POSTGRES_USER`: PostgreSQL username
+- `X_CLONE_POSTGRES_PASSWORD`: PostgreSQL password
+- `X_CLONE_POSTGRES_DB_NAME`: PostgreSQL database name
+
 ### Setup
 
 1. Install dependencies:
@@ -34,10 +92,11 @@ This directory contains the backend service for the `post` component of the x-cl
    go mod download
    ```
 
-2. Create a `.env` file, see `.env.example` as example:
+2. Create a `.env` file based on `.env.example`
+
 3. Initialize the database:
    ```sh
-   psql -U postgres -h localhost -d x_clone -f schema.sql
+   psql -U postgres -h localhost -d x_clone_post -f schema.sql
    ```
 
 4. Build the service:
@@ -49,6 +108,15 @@ This directory contains the backend service for the `post` component of the x-cl
    ```sh
    ./tmp/bin/post
    ```
+
+### Docker
+
+Build and run using Docker:
+
+```sh
+docker build -t x-clone-post .
+docker run --env-file .env x-clone-post
+```
 
 ## API Endpoints
 
