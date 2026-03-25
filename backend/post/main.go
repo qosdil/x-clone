@@ -111,7 +111,7 @@ func main() {
 	// Start Fiber
 	app := fiber.New()
 	if os.Getenv("DEBUG") == "true" {
-		app.Use(pprof.New())
+		app.Use(pprof.New(pprof.Config{Prefix: os.Getenv("X_CLONE_POST_PPROF_HTTP_PREFIX")}))
 	}
 	v1 := app.Group("/v1")
 	v1.Post("/posts/:public_id/like", auth.AuthMiddleware, postLikeValidator, postLikeHandler)
