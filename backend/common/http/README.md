@@ -1,10 +1,10 @@
-# X-Clone Common HTTP Module
+# Like-X Common HTTP Module
 
-This module provides common HTTP utilities for the X-Clone backend, including header-based authentication middleware.
+This module provides common HTTP utilities for the Like-X backend, including header-based authentication middleware.
 
 ## Overview
 
-The `backend/common/http` module is part of the X-Clone project (a Twitter-like social media platform). It provides reusable HTTP components built on top of the [Fiber](https://gofiber.io/) web framework.
+The `backend/common/http` module is part of the Like-X project (a Twitter-like social media platform). It provides reusable HTTP components built on top of the [Fiber](https://gofiber.io/) web framework.
 
 ## Features
 
@@ -19,7 +19,7 @@ The `backend/common/http` module is part of the X-Clone project (a Twitter-like 
 ### Authentication Middleware
 
 ```go
-import "github.com/qosdil/x-clone/backend/common/http/auth"
+import "github.com/qosdil/like-x/backend/common/http/auth"
 
 app.Use(auth.AuthMiddleware)
 ```
@@ -37,4 +37,4 @@ If the header is missing or contains `0`, the middleware returns a 401 Unauthori
 
 ## Contributing
 
-This is part of the X-Clone backend monorepo. Please follow the main project's contribution guidelines.
+This is part of the Like-X backend monorepo. Please follow the main project's contribution guidelines.

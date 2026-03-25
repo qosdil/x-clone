@@ -1,4 +1,4 @@
-module github.com/qosdil/x-clone/backend/common/http
+module github.com/qosdil/like-x/backend/common/http
 
 go 1.26.0
 
