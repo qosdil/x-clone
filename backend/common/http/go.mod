@@ -2,7 +2,10 @@ module github.com/qosdil/like-x/backend/common/http
 
 go 1.26.0
 
-require github.com/gofiber/fiber/v3 v3.1.0
+require (
+	github.com/gofiber/fiber/v3 v3.1.0
+	github.com/qosdil/like-x/backend/common/service v0.0.0-20260401152600-9e97f89c98ca
+)
 
 require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
