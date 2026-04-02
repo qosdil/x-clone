@@ -5,13 +5,18 @@ import (
 	"fmt"
 	user "likexuser/model"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
+type queryRowConn interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
 type db struct {
-	conn *pgxpool.Pool
+	conn queryRowConn
 }
 
 // Create inserts a new user record and returns the created user output.

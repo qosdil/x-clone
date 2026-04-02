@@ -52,3 +52,9 @@ Response:
 ```json
 {"id":"<public-id>"}
 ```
+
+## Tests
+
+```bash
+go test -cover ./... -count=1 -v
+```
