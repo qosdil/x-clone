@@ -53,6 +53,20 @@ Response:
 {"id":"<public-id>"}
 ```
 
+## Docker
+
+Build the image:
+
+```bash
+docker build -t like-x-user .
+```
+
+Run the container:
+
+```bash
+docker run --rm --env-file .env -p 3000:3000 --name like-x-post-latest like-x-user:latest
+```
+
 ## Tests
 
 ```bash
