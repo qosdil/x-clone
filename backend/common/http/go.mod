@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/gofiber/fiber/v3 v3.1.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/qosdil/like-x/backend/common/service v0.0.0-20260401152600-9e97f89c98ca
 )
 
