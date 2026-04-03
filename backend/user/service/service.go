@@ -15,6 +15,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	jwtSecretKeyMinLen = 32
+)
+
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
@@ -86,7 +90,7 @@ func (s *Service) SignUp(ctx context.Context, input user.CreateInput) (user.Crea
 // generateJWT creates a signed JWT token for the user.
 func generateJWT(publicID string) (string, error) {
 	secretKey := os.Getenv("JWT_SECRET_KEY")
-	if len(secretKey) < 8 {
+	if len(secretKey) < jwtSecretKeyMinLen {
 		return "", fmt.Errorf("JWT_SECRET_KEY not set properly")
 	}
 
