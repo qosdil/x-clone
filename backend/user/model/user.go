@@ -13,7 +13,7 @@ type AuthInput struct {
 	Password string `json:"password"`
 }
 
-// AuthOutput contains the JWT token returned after successful authentication.
+// AuthOutput contains the auth token returned after successful authentication.
 type AuthOutput struct {
 	Token string `json:"token"`
 }

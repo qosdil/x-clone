@@ -3,20 +3,12 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	user "likexuser/model"
 	"likexuser/repository"
 	"log"
-	"os"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	likexService "github.com/qosdil/like-x/backend/common/service"
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	jwtSecretKeyMinLen = 32
 )
 
 var (
@@ -25,15 +17,16 @@ var (
 
 // Service defines business logic for user-related operations.
 type Service struct {
-	repo repository.Repository
+	authenticator authenticator
+	repo          repository.Repository
 }
 
 // NewService constructs a new Service with the provided user repository.
-func NewService(repo repository.Repository) *Service {
-	return &Service{repo: repo}
+func NewService(authenticator authenticator, repo repository.Repository) *Service {
+	return &Service{authenticator: authenticator, repo: repo}
 }
 
-// Authenticate validates user credentials and returns a JWT token.
+// Authenticate validates user credentials and returns an auth token.
 func (s *Service) Authenticate(ctx context.Context, input user.AuthInput) (user.AuthOutput, error) {
 	// Get password hash by public_id
 	passwordHash, err := s.repo.FirstPasswordHashByPublicID(ctx, input.PublicID)
@@ -53,10 +46,9 @@ func (s *Service) Authenticate(ctx context.Context, input user.AuthInput) (user.
 		return user.AuthOutput{}, ErrInvalidCredentials
 	}
 
-	// Generate JWT token
-	token, err := generateJWT(string(input.PublicID))
+	token, err := s.authenticator.GenerateToken(string(input.PublicID))
 	if err != nil {
-		log.Printf("failed to generate JWT: %v", err)
+		log.Printf("failed to generate token: %v", err)
 		return user.AuthOutput{}, likexService.ErrInternal
 	}
 
@@ -85,28 +77,4 @@ func (s *Service) SignUp(ctx context.Context, input user.CreateInput) (user.Crea
 
 	log.Printf("sign-up successful for %v, %v", input.FullName, input.Password)
 	return signUp, nil
-}
-
-// generateJWT creates a signed JWT token for the user.
-func generateJWT(publicID string) (string, error) {
-	secretKey := os.Getenv("JWT_SECRET_KEY")
-	if len(secretKey) < jwtSecretKeyMinLen {
-		return "", fmt.Errorf("JWT_SECRET_KEY not set properly")
-	}
-
-	now := time.Now()
-	tokenExp := now.Add(24 * time.Hour)
-	claims := jwt.MapClaims{
-		"sub": publicID,
-		"exp": tokenExp.Unix(),
-		"iat": now.Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", fmt.Errorf("failed to sign token: %w", err)
-	}
-
-	return tokenString, nil
 }

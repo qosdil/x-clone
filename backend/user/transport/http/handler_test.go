@@ -31,10 +31,19 @@ func (f fakeRepo) FirstPasswordHashByPublicID(ctx context.Context, publicID user
 	return f.firstHash, f.firstErr
 }
 
+type fakeAuthenticator struct {
+	token string
+	err   error
+}
+
+func (a fakeAuthenticator) GenerateToken(_ string) (string, error) {
+	return a.token, a.err
+}
+
 func TestHandleSignUp_Success(t *testing.T) {
 	app := fiber.New()
 	fake := fakeRepo{createOutput: user.CreateOutput{ID: 1, PublicID: "pub-123"}}
-	svc := service.NewService(fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/sign-up", h.HandleSignUp)
 
@@ -63,7 +72,7 @@ func TestHandleSignUp_Success(t *testing.T) {
 func TestHandleSignUp_BadRequest(t *testing.T) {
 	app := fiber.New()
 	fake := fakeRepo{createOutput: user.CreateOutput{}, createErr: nil}
-	svc := service.NewService(fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/sign-up", h.HandleSignUp)
 
@@ -82,13 +91,13 @@ func TestHandleSignUp_BadRequest(t *testing.T) {
 }
 
 func TestHandleAuthenticate_Success(t *testing.T) {
-	os.Setenv("JWT_SECRET_KEY", "supersecret")
+	os.Setenv("JWT_SECRET_KEY", "supersecretkeythatisatleast32characterslong")
 	defer os.Unsetenv("JWT_SECRET_KEY")
 
 	passHash, _ := bcrypt.GenerateFromPassword([]byte("secret123"), bcrypt.DefaultCost)
 	app := fiber.New()
 	fake := fakeRepo{firstHash: string(passHash)}
-	svc := service.NewService(fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/authenticate", h.HandleAuthenticate)
 
@@ -117,7 +126,7 @@ func TestHandleAuthenticate_Success(t *testing.T) {
 func TestHandleAuthenticate_Unauthorized(t *testing.T) {
 	app := fiber.New()
 	fake := fakeRepo{firstErr: likexService.ErrNotFound}
-	svc := service.NewService(fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/authenticate", h.HandleAuthenticate)
 
