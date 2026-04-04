@@ -20,14 +20,11 @@ func GenerateJWT(publicID string) (string, error) {
 	}
 
 	now := time.Now()
-	tokenExp := now.Add(24 * time.Hour)
-	claims := jwt.MapClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": publicID,
-		"exp": tokenExp.Unix(),
+		"exp": now.Add(24 * time.Hour).Unix(),
 		"iat": now.Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	})
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		return "", fmt.Errorf("failed to sign token: %w", err)
