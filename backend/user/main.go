@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"likexuser/repository"
 	"likexuser/service"
-	httphandler "likexuser/transport/http"
+	httptransport "likexuser/transport/http"
 	"log"
 	"os"
 
@@ -48,7 +48,7 @@ func main() {
 	v1 := app.Group("/v1/users")
 
 	// Initialize the HTTP handler with the user service and repository dependencies.
-	h := httphandler.NewHandler(service.NewService(auth.NewAuth(), repository.NewPgx(pgxPool)))
+	h := httptransport.NewHandler(service.NewService(auth.NewAuth(), repository.NewPgx(pgxPool)))
 	v1.Post("/authenticate", h.HandleAuthenticate)
 	v1.Post("/sign-up", h.HandleSignUp)
 
