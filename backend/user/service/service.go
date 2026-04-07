@@ -9,7 +9,6 @@ import (
 
 	"github.com/qosdil/like-x/backend/common/http/auth"
 	likexService "github.com/qosdil/like-x/backend/common/service"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -18,13 +17,14 @@ var (
 
 // Service defines business logic for user-related operations.
 type Service struct {
-	authenticator authenticator
-	repo          repository.Repository
+	auth     authenticator
+	httpauth httpauthenticator
+	repo     repository.Repository
 }
 
 // NewService constructs a new Service with the provided user repository.
-func NewService(authenticator authenticator, repo repository.Repository) *Service {
-	return &Service{authenticator: authenticator, repo: repo}
+func NewService(auth authenticator, httpauth httpauthenticator, repo repository.Repository) *Service {
+	return &Service{auth: auth, httpauth: httpauth, repo: repo}
 }
 
 // Authenticate validates user credentials and returns an auth token.
@@ -42,12 +42,12 @@ func (s *Service) Authenticate(ctx context.Context, input user.AuthInput) (user.
 	}
 
 	// Validate password against hash
-	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(input.Password)); err != nil {
+	if err := s.auth.CompareHashAndPassword(passwordHash, input.Password); err != nil {
 		log.Printf("debug: password and hash not a match for public_id %s", input.PublicID)
 		return user.AuthOutput{}, ErrInvalidCredentials
 	}
 
-	token, err := s.authenticator.GenerateToken(string(input.PublicID))
+	token, err := s.httpauth.GenerateToken(string(input.PublicID))
 	if err != nil {
 		log.Printf("failed to generate token: %v", err)
 		return user.AuthOutput{}, likexService.ErrInternal

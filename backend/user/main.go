@@ -12,7 +12,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/qosdil/like-x/backend/common/http/auth"
+	"github.com/qosdil/like-x/backend/common/auth"
+	httpauth "github.com/qosdil/like-x/backend/common/http/auth"
 )
 
 var (
@@ -48,7 +49,7 @@ func main() {
 	v1 := app.Group("/v1/users")
 
 	// Initialize the HTTP handler with the user service and repository dependencies.
-	h := httptransport.NewHandler(service.NewService(auth.NewAuth(), repository.NewPgx(pgxPool)))
+	h := httptransport.NewHandler(service.NewService(auth.NewAuth(), httpauth.NewAuth(), repository.NewPgx(pgxPool)))
 	v1.Post("/authenticate", h.HandleAuthenticate)
 	v1.Post("/internal/authenticate", h.HandleInternalAuthenticate)
 	v1.Post("/sign-up", h.HandleSignUp)

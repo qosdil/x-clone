@@ -39,13 +39,17 @@ type fakeAuthenticator struct {
 	err   error
 }
 
+func (f fakeAuthenticator) CompareHashAndPassword(hash, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+}
+
 func (f fakeAuthenticator) GenerateToken(_ string) (string, error) {
 	return f.token, f.err
 }
 
 func TestSignUp_Valid(t *testing.T) {
 	m := &mockRepository{createOutput: user.CreateOutput{ID: 1, PublicID: "public-1"}}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	out, err := svc.SignUp(context.Background(), user.CreateInput{FullName: "John Doe", Password: "secret123"})
 	if err != nil {
@@ -58,7 +62,7 @@ func TestSignUp_Valid(t *testing.T) {
 
 func TestSignUp_InvalidFullName(t *testing.T) {
 	m := &mockRepository{}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	_, err := svc.SignUp(context.Background(), user.CreateInput{FullName: "Jan", Password: "secret123"})
 	if err != likexService.ErrBadRequest {
@@ -68,7 +72,7 @@ func TestSignUp_InvalidFullName(t *testing.T) {
 
 func TestSignUp_InvalidPassword(t *testing.T) {
 	m := &mockRepository{}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	_, err := svc.SignUp(context.Background(), user.CreateInput{FullName: "John Doe", Password: "123"})
 	if err != likexService.ErrBadRequest {
@@ -78,7 +82,7 @@ func TestSignUp_InvalidPassword(t *testing.T) {
 
 func TestSignUp_RepositoryError(t *testing.T) {
 	m := &mockRepository{createErr: likexService.ErrInternal}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	_, err := svc.SignUp(context.Background(), user.CreateInput{FullName: "John Doe", Password: "secret123"})
 	if err != likexService.ErrInternal {
@@ -89,7 +93,7 @@ func TestSignUp_RepositoryError(t *testing.T) {
 func TestAuthenticate_Success(t *testing.T) {
 	pwHash, _ := bcrypt.GenerateFromPassword([]byte("secret123"), bcrypt.DefaultCost)
 	m := &mockRepository{firstHash: string(pwHash)}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	out, err := svc.Authenticate(context.Background(), user.AuthInput{PublicID: "pub-1", Password: "secret123"})
 	if err != nil {
@@ -102,7 +106,7 @@ func TestAuthenticate_Success(t *testing.T) {
 
 func TestAuthenticate_NotFound(t *testing.T) {
 	m := &mockRepository{firstErr: likexService.ErrNotFound}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	_, err := svc.Authenticate(context.Background(), user.AuthInput{PublicID: "pub-1", Password: "secret123"})
 	if err != ErrInvalidCredentials {
@@ -113,7 +117,7 @@ func TestAuthenticate_NotFound(t *testing.T) {
 func TestAuthenticate_InvalidPassword(t *testing.T) {
 	pwHash, _ := bcrypt.GenerateFromPassword([]byte("otherpass"), bcrypt.DefaultCost)
 	m := &mockRepository{firstHash: string(pwHash)}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	_, err := svc.Authenticate(context.Background(), user.AuthInput{PublicID: "pub-1", Password: "secret123"})
 	if err != ErrInvalidCredentials {
@@ -131,7 +135,7 @@ func TestAuthenticateInternal_Success(t *testing.T) {
 	}
 
 	m := &mockRepository{firstID: 42}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	out, err := svc.AuthenticateInternal(context.Background(), token)
 	if err != nil {
@@ -147,7 +151,7 @@ func TestAuthenticateInternal_InvalidToken(t *testing.T) {
 	defer os.Unsetenv("JWT_SECRET_KEY")
 
 	m := &mockRepository{firstID: 42}
-	svc := NewService(fakeAuthenticator{token: "token"}, m)
+	svc := NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, m)
 
 	_, err := svc.AuthenticateInternal(context.Background(), "bad.token.value")
 	if err != auth.ErrInvalidToken {

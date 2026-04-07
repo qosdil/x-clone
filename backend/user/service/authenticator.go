@@ -1,5 +1,5 @@
 package service
 
 type authenticator interface {
-	GenerateToken(string) (string, error)
+	CompareHashAndPassword(hash, password string) error
 }

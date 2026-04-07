@@ -43,6 +43,10 @@ type fakeAuthenticator struct {
 	err   error
 }
 
+func (a fakeAuthenticator) CompareHashAndPassword(hash, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+}
+
 func (a fakeAuthenticator) GenerateToken(_ string) (string, error) {
 	return a.token, a.err
 }
@@ -50,7 +54,7 @@ func (a fakeAuthenticator) GenerateToken(_ string) (string, error) {
 func TestHandleSignUp_Success(t *testing.T) {
 	app := fiber.New()
 	fake := fakeRepo{createOutput: user.CreateOutput{ID: 1, PublicID: "pub-123"}}
-	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/sign-up", h.HandleSignUp)
 
@@ -79,7 +83,7 @@ func TestHandleSignUp_Success(t *testing.T) {
 func TestHandleSignUp_BadRequest(t *testing.T) {
 	app := fiber.New()
 	fake := fakeRepo{createOutput: user.CreateOutput{}, createErr: nil}
-	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/sign-up", h.HandleSignUp)
 
@@ -104,7 +108,7 @@ func TestHandleAuthenticate_Success(t *testing.T) {
 	passHash, _ := bcrypt.GenerateFromPassword([]byte("secret123"), bcrypt.DefaultCost)
 	app := fiber.New()
 	fake := fakeRepo{firstHash: string(passHash)}
-	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/authenticate", h.HandleAuthenticate)
 
@@ -133,7 +137,7 @@ func TestHandleAuthenticate_Success(t *testing.T) {
 func TestHandleAuthenticate_Unauthorized(t *testing.T) {
 	app := fiber.New()
 	fake := fakeRepo{firstErr: likexService.ErrNotFound}
-	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/authenticate", h.HandleAuthenticate)
 
@@ -162,7 +166,7 @@ func TestHandleInternalAuthenticate_Success(t *testing.T) {
 
 	app := fiber.New()
 	fake := fakeRepo{firstID: 42}
-	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/internal/authenticate", h.HandleInternalAuthenticate)
 
@@ -196,7 +200,7 @@ func TestHandleInternalAuthenticate_Unauthorized(t *testing.T) {
 
 	app := fiber.New()
 	fake := fakeRepo{firstIDErr: likexService.ErrNotFound}
-	svc := service.NewService(fakeAuthenticator{token: "token"}, fake)
+	svc := service.NewService(fakeAuthenticator{token: "token"}, fakeAuthenticator{token: "token"}, fake)
 	h := NewHandler(svc)
 	app.Post("/v1/users/internal/authenticate", h.HandleInternalAuthenticate)
 
